@@ -68,11 +68,17 @@
 
     .box {
         padding: 8px;
+        word-break: break-all;
     }
+
     .morse-code {
         font-size: 14px;
         font-weight: bold;
+        padding: 8px;
+        word-break: break-all;
+
     }
+
     @keyframes fader {
         from {
             border-right: 2px solid transparent;
@@ -111,7 +117,7 @@
 
     context.innerText += content;
     renderMorseText();
-    
+
     function renderMorseText() {
         morsetext.innerText = encode_morse_zh(content);
     }
