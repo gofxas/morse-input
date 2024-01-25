@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电报机</title>
+    <script src="./morse.js"></script>
+</head>
+<style>
+    body {
+        margin: 0;
+        background-image: url(./bg.png);
+        background-color: #fcfaf2;
+    }
+
+    .app {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        top: 0;
+        left: 0;
+    }
+
+    .notify {
+        width: 100%;
+        position: fixed;
+        text-align: center;
+        z-index: 1;
+        font-size: 13px;
+    }
+
+    #place,
+    #context {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    #place.empty {
+        border-right: 2px solid transparent;
+        animation: fader .5s linear infinite alternate-reverse;
+        padding-left: 2px;
+    }
+
+    .btn {
+        width: 80px;
+        height: 80px;
+        background-color: rgb(233, 190, 190);
+        position: fixed;
+        bottom: 10px;
+        border-radius: 20px;
+        box-shadow: 2px 2px 2px 0px rgb(171 171 171);
+    }
+
+    .btn:active {
+        /* background-color: aquamarine; */
+        box-shadow: none;
+        transition: .3s;
+    }
+
+    .box {
+        padding: 8px;
+    }
+
+    @keyframes fader {
+        from {
+            border-right: 2px solid transparent;
+        }
+
+        to {
+            border-right: 2px solid #000;
+        }
+    }
+</style>
+
+<body>
+    <p class="notify">
+        摩尔斯电码练习
+        短按空格输入“·”
+        长按空格200毫秒输入“-”
+        <a href="javascript:clearInput();" class="clr">清除内容</a>
+    </p>
+    <div class="app">
+        <div class="box">
+            <span id="context"></span>
+            <span id="place" class="empty"></span>
+        </div>
+        
+        <div class="btn" hidden></div>
+    </div>
+</body>
+<script>
+    let audioCtx, oscillator, gainNode; //音量连接扬声器
+    let started = false, curretnTime = 0, content = (localStorage.getItem("saved-content") || ""), placeholder = "", spaceTimer;
+    let context = document.querySelector("#context");
+    let place = document.querySelector("#place");
+    let btn = document.querySelector(".btn");
+
+    context.innerText += content;
+
+    function createCtx() {
+        audioCtx = new AudioContext();
+        oscillator = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.2;
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 450;
+        oscillator.connect(gainNode);    // 发生源振荡器连接音量
+        gainNode.connect(audioCtx.destination);
+    }
+
+    function pressHandler() {
+        clearAddSpace()
+        createCtx();
+        started = true;
+        curretnTime = (new Date()).getTime();
+        oscillator.start();
+    }
+    function pressUpHandler() {
+        started = false;
+        let now = (new Date()).getTime();
+        if (now - curretnTime > 200) {
+            placeholder += "-"
+        } else {
+            placeholder += "·"
+        }
+        place.innerText = placeholder;
+        addSpace()
+        oscillator.stop(audioCtx.currentTime);
+        audioCtx = null, oscillator = null, gainNode = null;
+    }
+
+    function addSpace() {
+        spaceTimer = setTimeout(() => {
+            context.innerText += (decode_morse_zh(placeholder));
+            content += (decode_morse_zh(placeholder));
+
+            localStorage.setItem("saved-content", content);
+            placeholder = "";
+            place.innerText = placeholder;
+        }, 350)
+    }
+
+    function clearAddSpace() {
+        if (spaceTimer) {
+            clearTimeout(spaceTimer);
+            spaceTimer = null;
+        }
+    }
+
+    function clearInput() {
+        console.log("clear")
+        content = "";
+        context.innerText = content;
+        localStorage.setItem("saved-content", content);
+    }
+
+    window.addEventListener("keydown", e => {
+        if (!started && e.code == "Space") {
+            pressHandler()
+        }
+        if (content && e.code == "Backspace") {
+            content = content.substring(0, content.length - 1);
+            context.innerText = content;
+        }
+    })
+    window.addEventListener("keyup", e => {
+        if (started && e.code == "Space") {
+            pressUpHandler()
+        }
+    })
+
+    btn.addEventListener("touchstart", e => {
+        pressHandler()
+    })
+    btn.addEventListener("touchend", e => {
+        pressUpHandler()
+    })
+
+
+
+    document.body.onblur = function () {
+        if (started) {
+            started = false;
+            oscillator.stop(audioCtx.currentTime);
+        }
+    }
+
+    if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
+        btn.hidden = false;
+    } else if (/(Android)/i.test(navigator.userAgent)) {
+        btn.hidden = false;
+    }
+</script>
+
+</html>
