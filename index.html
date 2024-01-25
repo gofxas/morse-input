@@ -69,7 +69,10 @@
     .box {
         padding: 8px;
     }
-
+    .morse-code {
+        font-size: 14px;
+        font-weight: bold;
+    }
     @keyframes fader {
         from {
             border-right: 2px solid transparent;
@@ -93,7 +96,7 @@
             <span id="context"></span>
             <span id="place" class="empty"></span>
         </div>
-
+        <div class="morse-code"></div>
         <div class="btn" hidden></div>
     </div>
 </body>
@@ -103,8 +106,14 @@
     let context = document.querySelector("#context");
     let place = document.querySelector("#place");
     let btn = document.querySelector(".btn");
+    let morsetext = document.querySelector(".morse-code");
 
     context.innerText += content;
+    renderMorseText();
+    
+    function renderMorseText() {
+        morsetext.innerText = encode_morse_zh(content);
+    }
 
     function createCtx() {
         audioCtx = new AudioContext();
@@ -142,7 +151,7 @@
         spaceTimer = setTimeout(() => {
             context.innerText += (decode_morse_zh(placeholder));
             content += (decode_morse_zh(placeholder));
-
+            renderMorseText();
             localStorage.setItem("saved-content", content);
             placeholder = "";
             place.innerText = placeholder;
@@ -160,6 +169,7 @@
         console.log("clear")
         content = "";
         context.innerText = content;
+        renderMorseText();
         localStorage.setItem("saved-content", content);
     }
 
@@ -170,6 +180,7 @@
         if (content && e.code == "Backspace") {
             content = content.substring(0, content.length - 1);
             context.innerText = content;
+            renderMorseText();
         }
     })
     window.addEventListener("keyup", e => {
