@@ -80,7 +80,9 @@
         word-break: break-all;
 
     }
-
+    label {
+        cursor: pointer;
+    }
     @keyframes fader {
         from {
             border-right: 2px solid transparent;
@@ -93,13 +95,26 @@
 </style>
 
 <body>
-    <p class="notify">
+    <div class="notify">
         摩尔斯电码练习
         短按空格输入“·”
         长按空格200毫秒输入“-”
-        <a href="javascript:clearInput();" class="clr">清除内容</a>
-        <a href="https://github.com/gofxas/morse-input" target="_blank">GITHUB</a>
-    </p>
+
+        <div>
+            <label for="timer" title="毫秒，最小350毫秒，最大2000毫秒">
+                字符停顿：
+            </label>
+            <input min="350" max="2000" placeholder="请输入毫秒" style="width: 90px;" type="number" id="timer">
+
+            <label for="kbd" title="A-Z和空格键可用">
+                按键设置：
+            </label>
+            <select name="kbd" id="kbd"></select>
+
+            <a href="javascript:clearInput();" class="clr">清除内容</a>
+            <a href="https://github.com/gofxas/morse-input" target="_blank">GITHUB</a>
+        </div>
+    </div>
     <div class="app">
         <div class="box">
             <span id="context"></span>
@@ -109,116 +124,7 @@
         <div class="btn" hidden></div>
     </div>
 </body>
-<script>
-    let audioCtx, oscillator, gainNode; //音量连接扬声器
-    let started = false, curretnTime = 0, content = (localStorage.getItem("saved-content") || "cpdd.cool"), placeholder = "", spaceTimer;
-    let context = document.querySelector("#context");
-    let place = document.querySelector("#place");
-    let btn = document.querySelector(".btn");
-    let morsetext = document.querySelector(".morse-code");
-
-    context.innerText += content;
-    renderMorseText();
-
-    function renderMorseText() {
-        morsetext.innerText = encode_morse_zh(content);
-    }
-
-    function createCtx() {
-        audioCtx = new AudioContext();
-        oscillator = audioCtx.createOscillator();
-        gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0.2;
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 450;
-        oscillator.connect(gainNode);    // 发生源振荡器连接音量
-        gainNode.connect(audioCtx.destination);
-    }
-
-    function pressHandler() {
-        clearAddSpace()
-        createCtx();
-        started = true;
-        curretnTime = (new Date()).getTime();
-        oscillator.start();
-    }
-    function pressUpHandler() {
-        started = false;
-        let now = (new Date()).getTime();
-        if (now - curretnTime > 200) {
-            placeholder += "-"
-        } else {
-            placeholder += "·"
-        }
-        place.innerText = placeholder;
-        addSpace()
-        oscillator.stop(audioCtx.currentTime);
-        audioCtx = null, oscillator = null, gainNode = null;
-    }
-
-    function addSpace() {
-        spaceTimer = setTimeout(() => {
-            context.innerText += (decode_morse_zh(placeholder));
-            content += (decode_morse_zh(placeholder));
-            renderMorseText();
-            localStorage.setItem("saved-content", content);
-            placeholder = "";
-            place.innerText = placeholder;
-        }, 350)
-    }
-
-    function clearAddSpace() {
-        if (spaceTimer) {
-            clearTimeout(spaceTimer);
-            spaceTimer = null;
-        }
-    }
-
-    function clearInput() {
-        console.log("clear")
-        content = "";
-        context.innerText = content;
-        renderMorseText();
-        localStorage.setItem("saved-content", content);
-    }
-
-    window.addEventListener("keydown", e => {
-        if (!started && e.code == "Space") {
-            pressHandler()
-        }
-        if (content && e.code == "Backspace") {
-            content = content.substring(0, content.length - 1);
-            context.innerText = content;
-            renderMorseText();
-        }
-    })
-    window.addEventListener("keyup", e => {
-        if (started && e.code == "Space") {
-            pressUpHandler()
-        }
-    })
-
-    btn.addEventListener("touchstart", e => {
-        pressHandler()
-    })
-    btn.addEventListener("touchend", e => {
-        pressUpHandler()
-    })
-
-
-
-    document.body.onblur = function () {
-        if (started) {
-            started = false;
-            oscillator.stop(audioCtx.currentTime);
-        }
-    }
-
-    if (/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) {
-        btn.hidden = false;
-    } else if (/(Android)/i.test(navigator.userAgent)) {
-        btn.hidden = false;
-    }
+<script src="./main.js">
 </script>
 <script>
     if ('serviceWorker' in navigator) {
